@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"bytes"
@@ -26,7 +26,30 @@ type qsStreams struct {
 	Stream4 string `json:"stream4"`
 }
 
-func login(username, secret string) ([]*http.Cookie, *string, error) {
+func post(cc []*http.Cookie, payload *bytes.Buffer, u string) (*http.Response, error) {
+	req, err := http.NewRequest("POST", u, payload)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range cc {
+		req.AddCookie(cc[i])
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("status error: %v", resp.StatusCode)
+	}
+
+	return resp, nil
+}
+
+func Login(username, secret string) ([]*http.Cookie, *string, error) {
 	u := qsAPI + "login"
 
 	payload := &qsCredentials{
@@ -55,31 +78,7 @@ func login(username, secret string) ([]*http.Cookie, *string, error) {
 	return resp.Cookies(), &val.ShortID, nil
 }
 
-// post issues a POST to u
-func post(cc []*http.Cookie, payload *bytes.Buffer, u string) (*http.Response, error) {
-	req, err := http.NewRequest("POST", u, payload)
-	if err != nil {
-		return nil, err
-	}
-
-	for i := range cc {
-		req.AddCookie(cc[i])
-	}
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("status error: %v", resp.StatusCode)
-	}
-
-	return resp, nil
-}
-
-func update(cc []*http.Cookie, id string, ss []string) error {
+func Update(cc []*http.Cookie, id string, ss []string) error {
 	u := qsAPI + fmt.Sprintf("stream/%s/update", id)
 
 	payload := &qsStreams{

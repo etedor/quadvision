@@ -1,17 +1,32 @@
-package main
+package internal
 
 import (
 	"fmt"
 	"math/rand"
 	"net/url"
-	"sort"
 	"strings"
 	"time"
 
 	"github.com/apex/log"
 )
 
-func getStreams(cands []Stream) []string {
+func isDuplicate(m map[int][]string, u string) bool {
+	for _, ss := range m {
+		for _, s := range ss {
+			p, err := url.Parse(u)
+			if err != nil {
+				panic(err)
+			}
+			prefix := fmt.Sprintf("%s://%s%s", p.Scheme, p.Host, p.Path)
+			if strings.HasPrefix(s, prefix) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func GetStreams(cands []Stream) []string {
 	high := -999
 	m := make(map[int][]string)
 	for _, s := range cands {
@@ -76,49 +91,4 @@ func getStreams(cands []Stream) []string {
 		out = append(out, "")
 	}
 	return out[:4]
-}
-
-func isDuplicate(m map[int][]string, u string) bool {
-	for _, ss := range m {
-		for _, s := range ss {
-			p, err := url.Parse(u)
-			if err != nil {
-				panic(err)
-			}
-			prefix := fmt.Sprintf("%s://%s%s", p.Scheme, p.Host, p.Path)
-			if strings.HasPrefix(s, prefix) {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func main() {
-	first := true
-	for {
-		if !first {
-			time.Sleep(10 * time.Minute)
-		}
-		first = false
-
-		cfg := load()
-		cc, id, err := login(cfg.Credentials.Username, cfg.Credentials.Secret)
-		if err != nil {
-			log.Error(err.Error())
-			continue
-		}
-
-		cands := cfg.Streams
-		sort.Slice(cands[:], func(i, j int) bool {
-			return cands[i].Priority > cands[j].Priority
-		})
-		ss := getStreams(cands)
-
-		err = update(cc, *id, ss)
-		if err != nil {
-			log.Error(err.Error())
-			continue
-		}
-	}
 }

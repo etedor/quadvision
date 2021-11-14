@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"os"
@@ -19,7 +19,7 @@ type Config struct {
 	Streams []Stream `yaml:"streams"`
 }
 
-func load() Config {
+func LoadConfig() Config {
 	f, err := os.Open("/app/config.yaml")
 	if err != nil {
 		panic(err)
