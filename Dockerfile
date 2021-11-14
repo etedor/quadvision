@@ -8,7 +8,7 @@ RUN apt-get update
 RUN apt-get install -y --no-install-recommends apt-utils
 RUN apt-get -t buster-backports install -y streamlink
 
-#install quadvision
+# install quadvision
 WORKDIR /app
 
 COPY go.mod ./
